@@ -34,6 +34,9 @@ class FrozenLakeAgent:
         sample = np.random.random()
 
         epsilon_threshold = (self.epsilon / self.n_actions) + 1 - self.epsilon
+        #if epsilon_threshold > 0.97:
+        #    epsilon_threshold = 0.97
+
         if sample < epsilon_threshold:
             with torch.no_grad():
                 return torch.argmax(self.policy_circuit(state))
@@ -88,8 +91,8 @@ class FrozenLakeAgent:
         self.optimizer.step()
 
     def train(self, n_episodes, render=False):
-        env = gym.make('FrozenLake-v1', map_name="4x4", is_slippery=False, render_mode='human' if render else None)
-        env = PenaltyWrapper(env)
+        env = gym.make('FrozenLake-v1', map_name="4x4", is_slippery=True, render_mode='human' if render else None)
+        #env = PenaltyWrapper(env)
         rewards_per_episode = np.zeros(n_episodes)
         for episode in range(n_episodes):
             state, info = env.reset()
@@ -113,10 +116,11 @@ class FrozenLakeAgent:
 
                 if done:
                     rewards_per_episode[episode] = reward.item()
-                    if rewards_per_episode[episode] > 0 or episode % 100 == 0:
+                    if rewards_per_episode[episode] > 0:
                         print(f"Episode {episode} finished after {step + 1} steps with reward {reward.item()}")
                         self.epsilon = self.epsilon / (1 + (episode / 100))
-                        print("\t", (self.epsilon / self.n_actions) + 1 - self.epsilon)
+                        threshold = (self.epsilon / self.n_actions) + 1 - self.epsilon
+                        print(f"\t {100 - 100*threshold:.3f}% chance of selecting a random action")
                     # print(f"Episode {episode} finished after {step} steps with reward {reward.item()}")
                     break
 
@@ -124,18 +128,19 @@ class FrozenLakeAgent:
                 target_circuit_state_dict = self.target_circuit.state_dict()
                 policy_circuit_state_dict = self.policy_circuit.state_dict()
 
+                #self.target_circuit.load_state_dict(policy_circuit_state_dict)
                 for key in policy_circuit_state_dict:
                     target_circuit_state_dict[key] = (policy_circuit_state_dict[key] * self.tau
                                                       + target_circuit_state_dict[key] * (1 - self.tau))
         env.close()
 
         plt.plot(rewards_per_episode)
-        plt.savefig('frozen_lake_qrl.png')
+        plt.savefig('out.png')
 
     def test(self):
         env = gym.make('FrozenLake-v1', map_name="4x4", is_slippery=False, render_mode='human')
         env = PenaltyWrapper(env)
-        for episode in range(3):
+        for episode in range(1):
             state = env.reset()[0]
             terminated = False  # True when agent falls in hole or reached goal
             truncated = False  # True when agent takes more than 200 actions
@@ -147,8 +152,8 @@ class FrozenLakeAgent:
                 with torch.no_grad():
                     action = torch.argmax(self.policy_circuit([state])).item()
 
-                print(action)
                 # Execute action
                 state, reward, terminated, truncated, _ = env.step(action)
+                print(f"State: {state}, Reward: {reward}, Terminated: {terminated}, Truncated: {truncated}")
 
         env.close()
