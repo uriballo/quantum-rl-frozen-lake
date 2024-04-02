@@ -91,8 +91,8 @@ class FrozenLakeAgent:
         self.optimizer.step()
 
     def train(self, n_episodes, render=False):
-        env = gym.make('FrozenLake-v1', map_name="4x4", is_slippery=True, render_mode='human' if render else None)
-        #env = PenaltyWrapper(env)
+        env = gym.make('FrozenLake-v1', map_name="4x4", is_slippery=False, render_mode='human' if render else None)
+        env = PenaltyWrapper(env)
         rewards_per_episode = np.zeros(n_episodes)
         for episode in range(n_episodes):
             state, info = env.reset()
@@ -118,7 +118,7 @@ class FrozenLakeAgent:
                     rewards_per_episode[episode] = reward.item()
                     if rewards_per_episode[episode] > 0:
                         print(f"Episode {episode} finished after {step + 1} steps with reward {reward.item()}")
-                        self.epsilon = self.epsilon / (1 + (episode / 100))
+                        self.epsilon = self.epsilon / (1 + (episode / 50))
                         threshold = (self.epsilon / self.n_actions) + 1 - self.epsilon
                         print(f"\t {100 - 100*threshold:.3f}% chance of selecting a random action")
                     # print(f"Episode {episode} finished after {step} steps with reward {reward.item()}")

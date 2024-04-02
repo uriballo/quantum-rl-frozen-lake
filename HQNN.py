@@ -41,7 +41,6 @@ def circuit(inputs, weights):
         qml.Hadamard(wires=2)
         qml.Hadamard(wires=3)
 
-
     return [qml.expval(qml.PauliZ(idx)) for idx in range(4)]
 
 
@@ -49,7 +48,7 @@ class HQNN(nn.Module):
     def __init__(self):
         super(HQNN, self).__init__()
 
-        weight_shapes = {"weights": (2,4)}
+        weight_shapes = {"weights": (2, 4)}
         self.qlayer = qml.qnn.TorchLayer(circuit, weight_shapes=weight_shapes)
         self.fc = nn.Linear(4, 4)
 

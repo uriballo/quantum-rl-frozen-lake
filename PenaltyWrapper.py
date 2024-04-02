@@ -14,7 +14,7 @@ class PenaltyWrapper(gym.Wrapper):
 
         if state not in self.goal_states:
             self.current_penalty += self.penalty  # Increase penalty
-            reward += self.current_penalty      # Apply accumulated penalty
+            reward += self.current_penalty  # Apply accumulated penalty
 
         return state, reward, terminated, truncated, info
 
